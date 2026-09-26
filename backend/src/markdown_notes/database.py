@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from collections.abc import Generator
 
 from markdown_notes.config import settings
 
@@ -18,3 +19,11 @@ SessionLocal = sessionmaker(
     autocommit=False
 )
 
+# Database dependency
+def get_db() -> Generator:
+    db = SessionLocal()
+    
+    try:
+        yield db
+    finally:
+        db.close()
