@@ -1,11 +1,19 @@
 from pathlib import Path
 import markdown
+import requests
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from markdown_notes.database import get_db
-from markdown_notes.schemas.note import NoteCreate, NoteResponse, NoteListItem, RenderedNoteResponse
+from markdown_notes.schemas.note import(
+    NoteCreate,
+    NoteResponse,
+    NoteListItem,
+    RenderedNoteResponse,
+    GrammarRequest,
+    GrammarResponse
+    ) 
 from markdown_notes.models.note import Note
 from markdown_notes.config import settings
 
@@ -125,3 +133,42 @@ def render_note_html(
         "title": note.title,
         "html": html
     }
+    
+@router.post("/grammar")
+def check_grammar(request: GrammarRequest):
+    try:
+        response = requests.post(
+            settings.grammar_api_url,
+            data={
+                "text":request.content,
+                "language":"en-US"
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=502,
+            detail="Grammar checking service is unvailable"
+        )
+    
+    
+    data = response.json()
+    
+    matches = []
+    for match in data["matches"]:
+        matches.append(
+            {
+                "message": match["message"],
+                "replacements": [
+                    replacement["value"]
+                    for replacement in match["replacements"]
+                ],
+                "offset": match["offset"],
+                "length": match["length"],
+                "sentence": match["sentence"],
+            }
+        )
+        
+    return {"matches": matches}

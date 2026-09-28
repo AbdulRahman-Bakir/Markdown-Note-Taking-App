@@ -28,3 +28,14 @@ class RenderedNoteResponse(BaseModel):
     
 class GrammarRequest(BaseModel):
     content: str = Field(min_length=1)
+
+class GrammarMatch(BaseModel):
+    message: str
+    replacement: list[str]
+    offset: int
+    length: int
+    sentence: str
+    
+class GrammarResponse(BaseModel):
+    matches: list[GrammarMatch]
+    
