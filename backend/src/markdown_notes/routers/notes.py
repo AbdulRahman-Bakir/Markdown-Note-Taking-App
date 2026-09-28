@@ -1,10 +1,11 @@
 from pathlib import Path
+import markdown
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from markdown_notes.database import get_db
-from markdown_notes.schemas.note import NoteCreate, NoteResponse, NoteListItem
+from markdown_notes.schemas.note import NoteCreate, NoteResponse, NoteListItem, RenderedNoteResponse
 from markdown_notes.models.note import Note
 from markdown_notes.config import settings
 
@@ -102,3 +103,25 @@ async def upload_note(
     db.refresh(note)
     
     return note
+
+@router.get("/{note_id}/html", response_model=RenderedNoteResponse)
+def render_note_html(
+    note_id: int,
+    db: Session = Depends(get_db)
+):
+    note = db.get(Note, note_id)
+    if note is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+    html = markdown.markdown(
+        note.content,
+        extensions=["tables", "fenced_code"]
+        )
+    
+    return{
+        "id": note.id,
+        "title": note.title,
+        "html": html
+    }
