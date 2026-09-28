@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from markdown_notes.database import get_db
 from markdown_notes.schemas.note import NoteCreate, NoteResponse, NoteListItem
 from markdown_notes.models.note import Note
+from markdown_notes.config import settings
 
 router = APIRouter(prefix="/notes", tags=["Notes"])
 
@@ -70,3 +73,32 @@ def delete_note(note_id: int, db: Session = Depends(get_db)):
     return {"message":"Note deleted successfully"}
 
 
+@router.post("/upload", response_model=NoteResponse)
+async def upload_note(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    if Path(file.filename).suffix.lower() != ".md":
+        raise HTTPException(
+            status_code=400,
+            detail="Only .md files are allowed"
+        )
+    
+    content = await file.read()
+    if len(content) > settings.max_upload_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail="File is too large"
+        )
+    
+    markdown_text = content.decode("utf-8")
+    title = Path(file.filename).stem
+    note = Note(
+        title=title,
+        content=markdown_text
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    
+    return note
