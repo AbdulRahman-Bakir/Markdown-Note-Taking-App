@@ -8,7 +8,7 @@ class NoteCreate(BaseModel):
 class NoteListItem(BaseModel):
     id: int
     title: str
-    create_at: datetime
+    created_at: datetime
     
     model_config = {"from_attributes": True}
     
