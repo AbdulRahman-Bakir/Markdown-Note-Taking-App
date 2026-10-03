@@ -1,11 +1,55 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
 
-function MarkdownEditor({ content, setContent }) {
+function MarkdownEditor({ content, setContent, onNoteSave }) {
   const [activeTab, setActiveTab] = useState("write");
   const [showGrammar, setShowGrammar] = useState(false);
   const [title, setTitle] = useState("Untitled note");
+
+  async function saveNote() {
+    if (!title.trim()) {
+      toast.error("Title cannot be empty.");
+      return;
+    }
+
+    if (title.trim().length > 255) {
+      toast.error("Title cannot exceed 255 characters.");
+      return;
+    }
+
+    if (content.trim().length < 10) {
+      toast.error("Content must be at least 10 characters long.");
+      return;
+    }
+    try {
+      const response = await fetch("http://localhost:8000/notes/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        toast.error(data.detail || "Failed to save the note.");
+        return;
+      }
+
+      const data = await response.json();
+      onNoteSave(data);
+      toast.success("Note saved successfully!");
+    } catch (error) {
+      toast.error("An error occurred while saving the note.");
+      console.log("error", error);
+    }
+  }
+
   return (
     <>
       <div className="border border-[#DFDACF] bg-[#FFFDF9] mt-4 rounded-xl">
@@ -143,7 +187,10 @@ function MarkdownEditor({ content, setContent }) {
           >
             Check grammar
           </button>
-          <button className="cursor-pointer rounded-lg tracking-wide px-6 py-2 bg-[#873C16] text-sm text-white">
+          <button
+            onClick={saveNote}
+            className="cursor-pointer rounded-lg tracking-wide px-6 py-2 bg-[#873C16] text-sm text-white"
+          >
             Save note
           </button>
         </div>
