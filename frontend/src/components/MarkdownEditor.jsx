@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -6,8 +6,17 @@ import { toast } from "sonner";
 function MarkdownEditor({ content, setContent, onNoteSave }) {
   const [activeTab, setActiveTab] = useState("write");
   const [showGrammar, setShowGrammar] = useState(false);
+  const [grammarMatch, setGrammarMatch] = useState([]);
+  const [isCheckingGrammar, setIsCheckingGrammar] = useState(false);
   const [title, setTitle] = useState("Untitled note");
 
+  const grammarBoxRef = useRef(null);
+
+  useEffect(() => {
+    if (showGrammar && grammarBoxRef.current) {
+      grammarBoxRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showGrammar]);
   async function saveNote() {
     if (!title.trim()) {
       toast.error("Title cannot be empty.");
@@ -48,6 +57,76 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
       toast.error("An error occurred while saving the note.");
       console.log("error", error);
     }
+  }
+
+  async function checkGrammer() {
+    if (!content.trim()) {
+      toast.error("Please enter some content first.");
+      return;
+    }
+
+    setIsCheckingGrammar(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/notes/grammar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        toast.error(data.detail || "Grammar check failed.");
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Grammar check response:", data);
+      setGrammarMatch(data.matches);
+      setShowGrammar(true);
+    } catch (error) {
+      toast.error("Could not connect to the server");
+      console.log("error", error);
+    } finally {
+      setIsCheckingGrammar(false);
+    }
+  }
+
+  function applyReplacement(match, replacement) {
+    console.log("Applying replacement:", match, replacement);
+    setContent(
+      content.slice(0, match.offset) +
+        replacement +
+        content.slice(match.offset + match.length),
+    );
+
+    setGrammarMatch((currentMatches) =>
+      currentMatches.filter((m) => m !== match),
+    );
+  }
+
+  function applyAllReplacements() {
+    let updateContent = content;
+
+    const sortedMatches = [...grammarMatch].sort((a, b) => b.offset - a.offset);
+
+    for (const match of sortedMatches) {
+      const replacement = match.replacements[0];
+
+      if (!replacement) {
+        continue;
+      }
+
+      updateContent =
+        updateContent.slice(0, match.offset) +
+        replacement +
+        updateContent.slice(match.offset + match.length);
+    }
+
+    setContent(updateContent);
+    setGrammarMatch([]);
+    setShowGrammar(false);
   }
 
   return (
@@ -182,10 +261,11 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
         )}
         <div className="border-t border-[#DFDACF] p-4 flex gap-3">
           <button
-            onClick={() => setShowGrammar(true)}
+            onClick={checkGrammer}
+            disabled={isCheckingGrammar}
             className="cursor-pointer rounded-lg tracking-wide border border-[#DFDACF] px-6 py-2 bg-[#F0EBDE] text-sm"
           >
-            Check grammar
+            {isCheckingGrammar ? "Checking..." : "Check grammar"}
           </button>
           <button
             onClick={saveNote}
@@ -196,12 +276,17 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
         </div>
       </div>
       {showGrammar && (
-        <div className="mt-4 rounded-lg border border-[#DFDACF] bg-[#FDFBF5] p-4">
+        <div 
+        ref={grammarBoxRef}
+        className="mt-4 rounded-lg border border-[#DFDACF] bg-[#FDFBF5] p-4">
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-[#281E16]">Grammar suggestions</h3>
 
             <div>
-              <button className="cursor-pointer rounded-lg tracking-wide border border-[#DFDACF] px-6 py-2 bg-[#F0EBDE] text-sm mr-3">
+              <button
+                onClick={applyAllReplacements}
+                className="cursor-pointer rounded-lg tracking-wide border border-[#DFDACF] px-6 py-2 bg-[#F0EBDE] text-sm mr-3"
+              >
                 Apply all
               </button>
               <button
@@ -213,8 +298,34 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
             </div>
           </div>
 
-          <div className="mt-3">
-            <p className="text-sm text-[#766E70]">No suggestions yet.</p>
+          <div className="mt-3 space-y-3">
+            {grammarMatch.length === 0 ? (
+              <p className="text-sm text-[#766E70]">No grammar issues found.</p>
+            ) : (
+              grammarMatch.map((match, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border border-[#DFDACF] bg-[#FFFDF9] p-4"
+                >
+                  <p className="font-medium text-[#281E16]">{match.message}</p>
+                  <p className="mt-2 text-sm text-[#766E70]">
+                    {match.sentence}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {match.replacements.map((replacement, index) => (
+                      <button
+                        onClick={() => applyReplacement(match, replacement)}
+                        key={index}
+                        className="rounded-lg border border-[#DFDACF] bg-[#F0EBDE] px-4 py-2 text-sm cursor-pointer "
+                      >
+                        {replacement}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

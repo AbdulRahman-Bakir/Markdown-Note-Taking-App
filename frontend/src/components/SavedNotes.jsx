@@ -20,6 +20,10 @@ function SavedNotes({ notes, onNoteDeleted }) {
     }
   }
 
+  function openHTML(noteId) {
+    window.open(`http://localhost:8000/notes/${noteId}/html`, "_blank");
+  }
+
   return (
     <div className="rounded-xl border border-[#DFDACF] bg-[#F5F2E7] p-4">
       <h2 className="text-xl tracking-tighter text-[#928889]">Saved Notes</h2>
@@ -40,7 +44,9 @@ function SavedNotes({ notes, onNoteDeleted }) {
                 {new Date(note.created_at).toLocaleDateString()}
               </p>
               <div className="mt-4 flex gap-2">
-                <button className="cursor-pointer rounded-lg border border-[#DFDACF] bg-[#F0EBDE] px-4 py-2 text-sm">
+                <button 
+                onClick={() => openHTML(note.id)}
+                className="cursor-pointer rounded-lg border border-[#DFDACF] bg-[#F0EBDE] px-4 py-2 text-sm">
                   HTML
                 </button>
 

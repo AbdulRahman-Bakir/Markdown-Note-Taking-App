@@ -3,6 +3,7 @@ import markdown
 import requests
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from markdown_notes.database import get_db
@@ -112,7 +113,7 @@ async def upload_note(
     
     return note
 
-@router.get("/{note_id}/html", response_model=RenderedNoteResponse)
+@router.get("/{note_id}/html", response_class=HTMLResponse)
 def render_note_html(
     note_id: int,
     db: Session = Depends(get_db)
@@ -128,11 +129,7 @@ def render_note_html(
         extensions=["tables", "fenced_code"]
         )
     
-    return{
-        "id": note.id,
-        "title": note.title,
-        "html": html
-    }
+    return HTMLResponse(content=html, status_code=200)
     
 @router.post("/grammar")
 def check_grammar(request: GrammarRequest):
