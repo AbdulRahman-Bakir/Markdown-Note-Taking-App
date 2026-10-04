@@ -1,16 +1,90 @@
-# React + Vite
+## Roadmap.sh Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project was built as a solution to the [Markdown Note-taking App](https://roadmap.sh/projects/markdown-note-taking-app) project from Roadmap.sh. 
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+* Upload Markdown (`.md`) files
+* Create and edit Markdown notes
+* Check grammar using LanguageTool
+* Save and list notes
+* Delete notes
+* Render Markdown notes as HTML
+* Preview Markdown content
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Backend
 
-## Expanding the ESLint configuration
+* FastAPI
+* SQLAlchemy
+* SQLite
+* Alembic
+* LanguageTool
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Frontend
+
+* React
+* Vite
+* Tailwind CSS
+
+## Project Structure
+
+```text
+├── backend/
+│   ├── migrations/
+│   └── src/
+│       └── markdown_notes/
+│
+├── frontend/
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       └── services/
+│
+└── README.md
+```
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd <your-repository-folder>
+```
+
+### 2. Backend
+
+```bash
+cd backend
+uv sync
+uv run alembic upgrade head
+uv run uvicorn markdown_notes.main:app --reload
+```
+
+### 3. Frontend
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`.
+
+
+## API Endpoints
+
+| Method   | Endpoint           | Description            |
+| -------- | ------------------ | ---------------------- |
+| `POST`   | `/notes/`          | Create a note          |
+| `GET`    | `/notes/`          | List all notes         |
+| `GET`    | `/notes/{id}`      | Get a note             |
+| `PUT`    | `/notes/{id}`      | Update a note          |
+| `DELETE` | `/notes/{id}`      | Delete a note          |
+| `POST`   | `/notes/upload`    | Upload a Markdown file |
+| `POST`   | `/notes/grammar`   | Check grammar          |
+| `GET`    | `/notes/{id}/html` | Render a note as HTML  |
