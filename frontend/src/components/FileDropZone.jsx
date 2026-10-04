@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-function FileDropZone({ setContent }) {
+function FileDropZone({ setContent, onNoteUploaded }) {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -42,6 +42,7 @@ function FileDropZone({ setContent }) {
       const data = await response.json();
 
       setContent(data.content);
+      onNoteUploaded(data);
       toast.success("File uploaded successfully!");
     } catch (error) {
       toast.error("An error occurred while uploading the file.");

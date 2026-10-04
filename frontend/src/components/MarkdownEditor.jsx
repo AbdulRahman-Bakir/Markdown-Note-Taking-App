@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 
-function MarkdownEditor({ content, setContent, onNoteSave }) {
+function MarkdownEditor({ content, setContent, onNoteSave, editingNoteId }) {
   const [activeTab, setActiveTab] = useState("write");
   const [showGrammar, setShowGrammar] = useState(false);
   const [grammarMatch, setGrammarMatch] = useState([]);
@@ -14,9 +14,42 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
 
   useEffect(() => {
     if (showGrammar && grammarBoxRef.current) {
-      grammarBoxRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      grammarBoxRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   }, [showGrammar]);
+
+  useEffect(() => {
+    if (editingNoteId === null) {
+      return;
+    }
+
+    async function fetchNote() {
+      try {
+        const response = await fetch(
+          `http://localhost:8000/notes/${editingNoteId}`,
+        );
+
+        if (!response.ok) {
+          const data = await response.json();
+          toast.error(data.detail || "Failed to fetch the note.");
+          return;
+        }
+
+        const data = await response.json();
+        console.log("Fetched note data:", data);
+        setTitle(data.title);
+        setContent(data.content);
+      } catch (error) {
+        toast.error("Could not connect to the server");
+        console.log("error", error);
+      }
+    }
+    fetchNote();
+  }, [editingNoteId, setContent]);
+
   async function saveNote() {
     if (!title.trim()) {
       toast.error("Title cannot be empty.");
@@ -33,8 +66,12 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
       return;
     }
     try {
-      const response = await fetch("http://localhost:8000/notes/", {
-        method: "POST",
+      const response = await fetch(
+        editingNoteId 
+        ? `http://localhost:8000/notes/${editingNoteId}`
+        : 'http://localhost:8000/notes/', 
+        {
+        method: editingNoteId ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -276,9 +313,10 @@ function MarkdownEditor({ content, setContent, onNoteSave }) {
         </div>
       </div>
       {showGrammar && (
-        <div 
-        ref={grammarBoxRef}
-        className="mt-4 rounded-lg border border-[#DFDACF] bg-[#FDFBF5] p-4">
+        <div
+          ref={grammarBoxRef}
+          className="mt-4 rounded-lg border border-[#DFDACF] bg-[#FDFBF5] p-4"
+        >
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-[#281E16]">Grammar suggestions</h3>
 

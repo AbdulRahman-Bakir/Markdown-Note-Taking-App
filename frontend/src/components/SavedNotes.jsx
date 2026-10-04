@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-function SavedNotes({ notes, onNoteDeleted }) {
+function SavedNotes({ notes, onNoteDeleted, onNoteSelected }) {
   async function deleteNote(noteId) {
     try {
       const response = await fetch(`http://localhost:8000/notes/${noteId}/`, {
@@ -34,8 +34,9 @@ function SavedNotes({ notes, onNoteDeleted }) {
         ) : (
           notes.map((note) => (
             <div
-              className="rounded-lg border border-[#DFDACF] bg-[#FDFBF5] p-4"
+              className="cursor-pointer rounded-lg border border-[#DFDACF] bg-[#FDFBF5] p-4"
               key={note.id}
+              onClick={() => onNoteSelected(note.id)}
             >
               <h3 className="font-medium text-[#281E16]">
                 {note.title || "Untitled Note"}

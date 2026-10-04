@@ -8,11 +8,16 @@ import { toast } from "sonner";
 function MarkdownNotesPage() {
   const [content, setContent] = useState("");
   const [savedNotes, setSavedNotes] = useState([]);
+  const [editingNoteId, setEditingNoteId] = useState(null);
 
   function handleNoteDeleted(noteId) {
     setSavedNotes((currentNotes) =>
       currentNotes.filter((note) => note.id !== noteId),
     );
+  }
+
+  function handleNoteSelected(note) {
+    setEditingNoteId(note);
   }
 
   useEffect(() => {
@@ -41,17 +46,35 @@ function MarkdownNotesPage() {
       <Header />
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-5 py-6 lg:grid-cols-3">
         <section className="lg:col-span-2">
-          <FileDropZone setContent={setContent} />
+          <FileDropZone
+            setContent={setContent}
+            onNoteUploaded={(note) => {
+              setSavedNotes((currentNotes) => [...currentNotes, note]);
+            }}
+          />
           <MarkdownEditor
             content={content}
             setContent={setContent}
             onNoteSave={(note) => {
-              setSavedNotes((currentNotes) => [...currentNotes, note]);
+              setSavedNotes((currentNotes) => {
+                if (editingNoteId === null) {
+                  return [...currentNotes, note];
+                }
+
+                return currentNotes.map((currentNote) =>
+                  currentNote.id === note.id ? note : currentNote,
+                );
+              });
             }}
+            editingNoteId={editingNoteId}
           />
         </section>
         <aside>
-          <SavedNotes notes={savedNotes} onNoteDeleted={handleNoteDeleted} />
+          <SavedNotes
+            notes={savedNotes}
+            onNoteDeleted={handleNoteDeleted}
+            onNoteSelected={handleNoteSelected}
+          />
         </aside>
       </main>
     </div>
