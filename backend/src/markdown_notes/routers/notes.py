@@ -1,6 +1,7 @@
 from pathlib import Path
 import markdown
 import requests
+import nh3
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse
@@ -101,7 +102,19 @@ async def upload_note(
             detail="File is too large"
         )
     
-    markdown_text = content.decode("utf-8")
+    try:
+        markdown_text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be UTF-8 encoded."
+        )
+    if len(markdown_text.strip()) < 10:
+        raise HTTPException(
+            status_code=400,
+            detail="File content must be at least 10 characters."
+        )
+    
     title = Path(file.filename).stem
     note = Note(
         title=title,
@@ -128,6 +141,7 @@ def render_note_html(
         note.content,
         extensions=["tables", "fenced_code"]
         )
+    html = nh3.clean(html)
     
     return HTMLResponse(content=html, status_code=200)
     
