@@ -2,5 +2,4 @@
 __pycache__/
 uploads/
 .env
-.env.example
 backend/markdown_notes.db

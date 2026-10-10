@@ -31,7 +31,7 @@ class GrammarRequest(BaseModel):
 
 class GrammarMatch(BaseModel):
     message: str
-    replacement: list[str]
+    replacements: list[str]
     offset: int
     length: int
     sentence: str

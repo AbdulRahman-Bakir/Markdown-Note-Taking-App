@@ -1,6 +1,6 @@
 from pathlib import Path
 import markdown
-import requests
+import httpx
 import nh3
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -145,23 +145,21 @@ def render_note_html(
     
     return HTMLResponse(content=html, status_code=200)
     
-@router.post("/grammar")
-def check_grammar(request: GrammarRequest):
+@router.post("/grammar", response_model=GrammarResponse)
+async def check_grammar(request: GrammarRequest):
     try:
-        response = requests.post(
-            settings.grammar_api_url,
-            data={
-                "text":request.content,
-                "language":"en-US"
-            },
-            timeout=10
-        )
-        response.raise_for_status()
-        
-    except requests.RequestException:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post(
+                settings.grammar_api_url,
+                data={
+                    "text":request.content,
+                    "language":"en-US"
+                })
+            response.raise_for_status()
+    except httpx.HTTPError:
         raise HTTPException(
             status_code=502,
-            detail="Grammar checking service is unvailable"
+            detail="Grammar checking service is unavailable"
         )
     
     
