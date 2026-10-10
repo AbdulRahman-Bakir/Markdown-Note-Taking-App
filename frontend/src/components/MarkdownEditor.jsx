@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { API_URL } from "../services/api";
 
 function MarkdownEditor({ content, setContent, onNoteSave, editingNoteId }) {
   const [activeTab, setActiveTab] = useState("write");
@@ -28,9 +29,7 @@ function MarkdownEditor({ content, setContent, onNoteSave, editingNoteId }) {
 
     async function fetchNote() {
       try {
-        const response = await fetch(
-          `http://localhost:8000/notes/${editingNoteId}`,
-        );
+        const response = await fetch(`${API_URL}/notes/${editingNoteId}`);
 
         if (!response.ok) {
           const data = await response.json();
@@ -67,9 +66,7 @@ function MarkdownEditor({ content, setContent, onNoteSave, editingNoteId }) {
     }
     try {
       const response = await fetch(
-        editingNoteId 
-        ? `http://localhost:8000/notes/${editingNoteId}`
-        : 'http://localhost:8000/notes/', 
+        editingNoteId ? `${API_URL}/notes/${editingNoteId}` : `${API_URL}/notes/`,
         {
         method: editingNoteId ? "PUT" : "POST",
         headers: {
@@ -105,7 +102,7 @@ function MarkdownEditor({ content, setContent, onNoteSave, editingNoteId }) {
     setIsCheckingGrammar(true);
 
     try {
-      const response = await fetch("http://localhost:8000/notes/grammar", {
+      const response = await fetch(`${API_URL}/notes/grammar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

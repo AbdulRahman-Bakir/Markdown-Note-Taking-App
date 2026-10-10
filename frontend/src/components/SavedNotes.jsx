@@ -1,9 +1,10 @@
 import { toast } from "sonner";
+import { API_URL } from "../services/api";
 
 function SavedNotes({ notes, onNoteDeleted, onNoteSelected }) {
   async function deleteNote(noteId) {
     try {
-      const response = await fetch(`http://localhost:8000/notes/${noteId}/`, {
+      const response = await fetch(`${API_URL}/notes/${noteId}`, {
         method: "DELETE",
       });
 
@@ -21,7 +22,7 @@ function SavedNotes({ notes, onNoteDeleted, onNoteSelected }) {
   }
 
   function openHTML(noteId) {
-    window.open(`http://localhost:8000/notes/${noteId}/html`, "_blank");
+    window.open(`${API_URL}/notes/${noteId}/html`, "_blank");
   }
 
   return (

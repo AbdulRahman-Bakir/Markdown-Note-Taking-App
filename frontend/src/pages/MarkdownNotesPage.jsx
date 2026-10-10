@@ -4,6 +4,7 @@ import MarkdownEditor from "../components/MarkdownEditor";
 import SavedNotes from "../components/SavedNotes";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { API_URL } from "../services/api";
 
 function MarkdownNotesPage() {
   const [content, setContent] = useState("");
@@ -14,19 +15,25 @@ function MarkdownNotesPage() {
     setSavedNotes((currentNotes) =>
       currentNotes.filter((note) => note.id !== noteId),
     );
+
+    // The editor was showing the note that just got deleted: reset it.
+    if (noteId === editingNoteId) {
+      setEditingNoteId(null);
+      setContent("");
+    }
   }
 
-  function handleNoteSelected(note) {
-    setEditingNoteId(note);
+  function handleNoteSelected(noteId) {
+    setEditingNoteId(noteId);
   }
 
   useEffect(() => {
     async function fetchSavedNotes() {
       try {
-        const response = await fetch("http://localhost:8000/notes/");
+        const response = await fetch(`${API_URL}/notes/`);
 
         if (!response.ok) {
-          toast.error;
+          toast.error("Failed to fetch saved notes.");
           return;
         }
 
@@ -43,16 +50,22 @@ function MarkdownNotesPage() {
 
   return (
     <div className="font-sans min-h-screen bg-[#FAF7EF]">
-      <Header />
+      <Header noteCount={savedNotes.length} />
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-5 py-6 lg:grid-cols-3">
         <section className="lg:col-span-2">
           <FileDropZone
-            setContent={setContent}
             onNoteUploaded={(note) => {
               setSavedNotes((currentNotes) => [...currentNotes, note]);
+              // The uploaded note is now the one being edited, so Save updates it
+              // instead of creating a duplicate.
+              setEditingNoteId(note.id);
             }}
           />
           <MarkdownEditor
+            // Changing the key remounts the editor, which resets its local
+            // state (title, tab, grammar results) when a different note is
+            // selected or the current one is deleted.
+            key={editingNoteId ?? "new"}
             content={content}
             setContent={setContent}
             onNoteSave={(note) => {
@@ -65,6 +78,8 @@ function MarkdownNotesPage() {
                   currentNote.id === note.id ? note : currentNote,
                 );
               });
+              // After the first save of a new note, further saves must update it.
+              setEditingNoteId(note.id);
             }}
             editingNoteId={editingNoteId}
           />

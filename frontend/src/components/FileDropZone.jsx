@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { API_URL } from "../services/api";
 
-function FileDropZone({ setContent, onNoteUploaded }) {
+function FileDropZone({ onNoteUploaded }) {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -27,7 +28,7 @@ function FileDropZone({ setContent, onNoteUploaded }) {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8000/notes/upload", {
+      const response = await fetch(`${API_URL}/notes/upload`, {
         method: "POST",
         body: formData,
       });
@@ -41,7 +42,8 @@ function FileDropZone({ setContent, onNoteUploaded }) {
 
       const data = await response.json();
 
-      setContent(data.content);
+      // The page sets this note as the one being edited, and the editor
+      // loads its title and content from the server.
       onNoteUploaded(data);
       toast.success("File uploaded successfully!");
     } catch (error) {
